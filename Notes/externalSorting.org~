@@ -1,0 +1,7 @@
+
+* Cost algorithms
+** Ram Model
+** IO model
++ transfer data from disk in large pages
++ Count number of IO performed
++ Assumes IO dominates the cust

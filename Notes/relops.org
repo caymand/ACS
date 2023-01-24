@@ -1,0 +1,165 @@
+
+* Join
+** Nested loop
++ Outer loop scans the entire table (outer table)
++ Inner loop the inner table - this is where comparison. takes place
+
++ IO cost
+  For each row in the outer we loop over the entire inner table
+  Therefore, we load for each outer record all pages of inner table
+  - This is 1000*100 for outer table and we load 500 pages in the
+    inner
+  - Additional 1000 for loading all the 1000 outer pages
+  If each IO takes 10ms this takes 6 days
++ What if smaller relation (S) is outer - reduces IO
+  + TODO: example
++ What if one relation can fit in memory
+
+*** Page oriented nested loop
++ Take a page of R
++ Take a page of S
++ Joint these two pages
++ Cost?
+  Each page is only looped over once.
+  This gives us much less work
+  1000*500 + 1000
+  |R|*|S|+|R|
++ What if smaller relation is outer - slightly less 1000*500 + 500
+  |R|*|S|+|S |
+
+*** Block nested loop  joins
++ B-2 pages for block of R-tuples
++ 1 input and 1 output buffer
++ Cost?
+  scan-outer + (#outer-blocks * scan-inner)
++ Number of outer blocks is |R|/(B-2)
++ This will be asked about in the exam
++ Example
+  Largest table as outer
+  B=100+2 memory buffer
+  Join cost = outer + (#outer-blocks * inner)
+  R = 1000
+  #outer-blocks = 1000/100 = 10
+  Per block of R w scan S(500) - 500*10 = 5000 IO
+  Total = 1000+10*500 = 6000
+  at 10ms/10 ~ 1minute
+
+  Smallest able as outer
+  With S as outer and S=500
+  TOTAL: 500 + ((500/100) * 1000) = 500 + 5000 = 5500 IO
+
+  I guess this is like tiling?
+
+*** Index nested loops join
++ Suppose index on joining attribute
++ For each outer tuple we can lookup the index an attribute in tuple
++ We return the index match directly instead of an inner loop
++ Is this better than block nested?
+  Even for clustered data we do random access since we have to select
+  matching tuples
+  So it can depend on the number of matches
++ Suppose we can hold the entire index in memory
+  For each tuple r we have 1 IO, since we can load the entire index on
+  r into memory and then select correct tuples from the index.
+
+  This is usually the assumption when doing index loop joins
+
+* Hashed based algorithm
+** Phase 1
++ Partition based on h and the value of input tuple
++ We make B-1 partitions for the B-1 buckets in hash-table
++ Once a partition is full we write it to disk
+** Phase 2
++ Load a partition
++ For each input in partition do another hash function h2
++ If it hashes to something already there, eliminate
++ When a partition is done, write the hash table to memory
+
+
+* Sort-merge Join
++ Sort R on attribute
++ Sort S on attribute
++ Scan the two sorted in tandem advancing pointers on difference
+
+What if we have lots of duplicates?
++ This is just like a normal nested join
+
+Cost
++ Sort R
++ Sort S
++ Scan sorted R and scan sorted S
++ Worst case however we have R*S when R and S have only duplicates
+
+Exercise
+B=35
+R=1000, S=1000
+Phase 1 sort:
+  R: log_35(1000) = 2
+  S: log_35(500)= 2
+
+Phase 2 also has 2 passes for each
+
+Total join cost is
+4*1000 + 4*500 + (1000 + 500) = 7500
+
+Suppose B=300
+log_300(1000)=log_300(500)=2
+so total IO cost is till 7500
+
+
+Can get away with 3*R + 3*S if we join while merging
+- The last write we do not count
+- Do not count this since we do not know how many matches it will be
+
+How much memory is enough for 2 passes?
++ Num runs is R/B and S/B (each run is size B)
++ We need enough buffer page to have a page for each run
++ (R/B + S/B) <= B-1 (B-1 input buffer pages)
++ If we want all runs in memory we get
++ R+S <= B-1 < B²
++ B = sqrt(R+Ś)
++ Then we can join in two passes with 3*R+3*S
+  + One load, one write
++ This will be an exam question
+
+Sort-merge join is good if
++ One or both inputs are already sorted on join attribute - we can
+  just merge
++ Output required to be sorted on join attribute
+
+* GRACE Hash Joins
+** Phase 1
++ Partition relations using hash function into B-1 buckets
+  We hash on the attribute
++ The join will be
+  R join s = R1 join S1 U R2 join S2,..., R_B-1 join S_B-1
+
+Cost
+2 * (R+S) - read and write each page
+** Phase 2
++ Use new hash function (otherwise they hash to same bucket)
++ We put B-2 pages of Ri into the buffer
++ Take a page of input Si and scan through B-2 pages of Ri
+Cost
+R+S - Read each page of both tables. We ignore those we write out to
+the user
+
+** Memory - 2 Passes
+Either Ri or Si should be smaller than B-2 pages
+Assume S is the smallest table
+Si <= B-2
+S is partinioed into B-1 partitions
+Si = S/(B-1)
+(S/(B-1)) <= B-2
+sqrt(S) < B for two passes
+
+with total IO of 3(R+S)
+
+However, Sort and Hash use equally many IO operations
+
+
+
+* Set operations
++ Intersection - Special cases of join
++ Union - similar
++

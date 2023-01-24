@@ -1,0 +1,80 @@
+Analysis 
+- Identify dirty pages and active transactions
+
+Redo
+- Rebuild up to the point where we crashed
+- Some transactions might be committed(this is at least our assumption)
+- Repeat actions to last known state we can prove was "stable"
+- get the latest data that was build until the crash
+
+Undo
+- We undo actions until there are no uncommitted transactions
+
+Steal - write uncommitted transactions to disk (reuse memory)
+No-force - when transactions commit, do not force pages to disk
+
+Exercise 1
+1.
+No need to undo here, since nothing is written to disk we have no "uncomplete state"
+As long as no uncommitted data is written to disk we do not need to undo.
+This is about stealing
+
+2.
+We still need redo to get to the point before the crash - thereby redo transactions
+
+3.
+we might still have bad disk data, so we still need to undo
+We might still be stealing - remove uncommitted data structure
+
+4.
+Since we have written the data to disk, we do not need to recreate it
+
+Exercise 2.
+1. 
+Find end_checkpoint to lookup begin_checkpoint and begin. 
+- end_checkpoint with highest LSN number
+
+2.
+Lowest recLSN in the dirty page table
+- first action that made the page dirty
+- first transaction number that is not written to disk
+
+3.
+Latest LSN on a non-committed active transaction.
+
+Exercise 2
+1.Analysis phase
+// XID| S | LSN
+// ----T2 | C | 10
+// ----T1 | C | 6
+// T3 | R | 7
+
+// P | LS
+// C | 1
+// B | 2
+// A | 7
+2.
+Winner: T1, T2 - they commit
+Loser: T3 - does not commit
+3.
+Redo: Start at recLSN=1,
+Undo: start: LSN 7, stop 0
+
+4.
+LSN: {1, 2, 7, 8}
+
+5.
+LSN: {7}
+
+6.
+// XID| S | LSN
+// ----T2 | C | 10
+// ----T1 | C | 6
+// T3 | R | 7
+
+// P | LS
+// C | 1
+// B | 2
+// A | 7
+
+

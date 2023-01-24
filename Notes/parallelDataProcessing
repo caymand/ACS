@@ -1,0 +1,139 @@
+Parallel databases
+	Pipeline parallelism
+	- Many machines
+	- Each doing a step in multi-step prcess
+	- Imagine a pipeline, each step is sequential, but each step is executed in parallel
+	Partition parallelism
+	- Machines doing the same thing to different data
+	- Run many sequential programs all at once, each program doing the same thing
+
+Bulk-processing
+- Exploits pipeline and partions parallelism
+	The batch of the same program used partition parallelism
+	There are many batches - pipeline parallelism
+
+Speed-up
+- Ideal:
+	Throughput increases linearely with more paralllism
+- More resources - mean each resource has proportionally less time to process data
+	It gets less data, so highter throughput
+
+Scale-up
+- Ideal
+	If we want the same response time, then we just increase parallelism
+	The more requests we get is just handled by more parallelism
+- Resouces increase in proportion to increase ind data size - achieve same response
+
+Architechtural issue
+- Shared memory
+	Clients contact a number of processors
+	The processors have shared memory, but each processor has its own disk
+	Easy to program
+	Hard to scale
+- Shared disk
+	Now each processor has its own memory, but they all share the same disk
+	Relatively easy to program
+	Harder to scale
+- Shared nothing
+	Hardest to program
+	But easiest to scale, since we can essentially just install more processors
+
+Types of database parallelism
+	Intra-operator parallelism
+	- All machines cooperate on a operation
+		Parallel scan, sort, join
+	Inter-operator parallelism
+	- Each operator/actions runs concurrently on different sites
+	- They can do different operations
+	- Pipeline parallelism - one query where we do actions on different sides in parallel
+	Inter-query parallism
+	- Different queries runs on different sites
+Database partitioning
+Can be partioning of the tuples over several disks to achieve paralleism (read from disks in parallel).
+The question is how we do the partitioning. There are three main approaches:
+	Round robin
+	- If we look at for instance tuples, then first input goes to node 1, second node 2...
+	- Good for sequentially accessing tuples - tuples are fetched in parallel
+	- Problem is we typically only want tuple with particular value,
+	- So we need to find those tuples before we can do parallel work
+	Hash partitioning
+	- Place tuples on disk by applying hash function to tuple
+	- So all tuples with a particular attribute end up on the same node
+	- Therefore good for sequential access to associated data (all on same node)
+	- Does tend to randomize data, so pages might not be full of the data we want
+	- That is we cannot with hashing group related data to be sequentially accessed
+	  on pages, since access is more random
+	Range partitioning
+	- Places tuples with similar attributes together
+	- Good for sequential and associative acces
+	- Also good for clustering
+	- Problem with skew - all data on one node
+		Can also be execution skew. All exection on one node
+
+Handling Skew
+- Range partitioning
+	- Sample loads on disk
+	- We "cool" so called "hot disks" by having smaller ranges
+	- With smaller ranges skew is less likely
+	- Each disk has more ranges
+
+- Hash partitioning
+	- More buckets tan #nodes
+	- Then we map buckets on hot disks to other disks
+	- Now we have evenly distributed loads
+- During query processing
+	- Use hashing and assume uniform distribution
+	- For range partitioning - keep histogram to level the bulk
+	- Work queue to balance load
+
+Parallel scan
+	- Scan in parallel on each fragment of relation that is split to different nodes
+	- Send result to centralized node that does a merge operatios
+	- Build index on each partition
+Parallel Sort
+- Used by, DISTINCT, GROUP-BY, ORDER-BY, SORT-MERGE-JOIN and index build
+- Phases
+	1. Redistribute all data to all nodes. This is easily done by range partitioning, since we can just range what we need to sort
+	2. Sort data in parallel on each node
+	3. Since we use range partitioning, and each node has sorted data, visiting each node in order gives us sorted data
+- Note
+	1. Requires repartitioning of the data 1 to 1. Need lots of bandwith
+	2. & 3. are local processing
+	3. linear speedup, scalup
+
+Paralell Joins
+- Nested loops
+	- Each outer tuple is compared with all inner tuple
+	- For hash/range, this is easy, since joining attributes are in the buckets/partitions
+		Consider joining on A and B, and let them be hash-partitioned on joining attribute
+- Sort-Merge or Merge-Join
+	- Sorting produces range partioned data
+		R and S should use same partitioning function
+		Goal of skew is that |Ri| + |Si|  are same size for all
+	- Local merge-join partitioned tables
+		(Now that data is partioned to each site, we can join at each site)
+		R1 join S1 at side 1, R2 join S2 at site 2,..., up to site n
+
+Parallel Hash-join
+- Phase 1
+	Distribute the relations into partitions on joining attribute using hash function
+	These are distributed to each site
+	Good hash function does good distribution
+- Phase 2
+	This works locally at each site
+	Basically we join Ri and Si at each site
+	How we do it is as follows:
+		New hash function h2
+		Hash Ri into k<B-1 buckets for each page. We have at most B-2 pages of Ri in memory
+		Now take a single Si bucket and use h2 to find all joins in Ri.
+			Scan through the matching bucket
+
+Split-Merge
+- If we have a sequential scan,
+	then we can split it into more parts
+	merge the parts later
+	Exploits more parallelism
+- Recall that split is done by data partioning
+	Round-Robin
+	Hash
+	Range

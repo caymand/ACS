@@ -1,0 +1,57 @@
+Reading uncommitted data
+- WR anomaly
+- Dirty read
+Unrepeatable Reads
+- RW anomaly
+- second read is different
+Overwriting uncommitted data
+- WW anomaly
+isolation
+-this is all or nothing atomicity
+Atomicity
+- Before or after
+Lamport logical clocks
+- e preceedes f => timetamp e < timestamp f
+- timestamp e preceedes f !=> e preceedes f
+Vector clock
+- e preceedes f => timetamp e < timestamp f
+- timestamp e preceedes f => e preceedes f
+Synchronous Replication
+- Wait for response of replicas
+- Can be primary site
+Asynchronous Replicaton (not wait for response)
+- Peer to peer
+- Primary sites
+All types of failure models
+- Byzantine
+- Fail soft - continue with lower degree of functionality
+- Fail stop - do not contain error but stop
+Byzantine failure model
+- Faulty process may fail at any time for any reason
+- Fail to give output
+- Give bad or malicious output
+2PC
+- Protocol
+-Failure
+	In case of failure after commit or abort is written but no end.
+	- Redo/undo the transaction
+	- Send abort or commit depending on status
+	If we only have a prepare but no commit, then the node is a suboordinate of the transaction
+	- Contact coordinator for status
+	- then redo/undo the transaction
+	- and write and end record
+	In case not even a prepare log recorc is presend  - unilateral abort
+	- We may abort a coordinator so be prepared for msgs of subordinates - reply them abort
+- Logs
+	Coordinator:
+	- Logs XactId and participants
+	- Writes prepare log
+	- Adds commited or abort - this is a forced write
+	- Done log record after receiving all acks
+	Participants
+	- Logs XactId and CoordinatorId
+	- Logs prepare log
+	- Logs Yes(uncertain)/no(abort)
+	- Logs commit/aborted depending on msg from coordinator
+- Presumed abort
+Optimistic concurrency control

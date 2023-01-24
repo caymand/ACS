@@ -1,0 +1,77 @@
+All or nothing atomicity
+	Completely executed(completely before or after one another)
+	Durability
+	Consistent database
+	
+Force or no-force semantics
+Steal page from transactions
+	- Move stolen page to disk
+	- Page on disk can belong to uncomitted transactions(these may abort)
+	
+Log
+	ordered list of undo-redo actions
+WAL
+	- Log before update
+	- Write log before commit
+	
+Log record - unique sequence number (always increasing)
+Data-page 
+	Log sequence number of most resent update to record on the page
+	
+Log tail
+	- Log in ram before disk
+	- Lost in case of crash
+	
+Log should be flushed further than modification to disk
+	Log is written before the page is written to disk
+
+Transaction table
+	- Stored in ram
+	- [XID, Status(commit, end, abort,...), last LSN for the transaction(last log recrod written by transaction)]
+	
+	
+Dirty page table
+	- Dirty pages in ram - modified pages in ram not written to disk
+	- [pageID, rec LSN]
+	- recLSN - sequence number corresponding to log that made first modification that made the page dirty
+
+Checkpoint
+	- Copy of database in stable storage
+	- Log statement corresponding to a checkpoint
+		begin_checkpoint, end_checkpoint(curret Xact table and DPT)
+	- why is it limited by oldest unwritten change in DTP?
+	
+Transaction commit
+	- write commit log
+	- all log records up to Xact lastLSN er flushed -> flushedLSN >= lastLSN
+		note (commit record will have lastLSN)
+	- commit returns
+	- write end log
+	
+Abort (explicit simple abort - deadlock, user abort and so on)
+	- Undo transaction actions
+	- Get lastLSN from transaction table (points to last log of transaction)
+	- undo the lastLSN, and follow prevLSN undoing their actions
+	- write abort record before starting UNDO
+	- S2PL is needed to undo changes of the data - need lock on data
+	- write CLR before restoring an old value
+		CLR - like update record, but has undoNextLSN(will be prevLSN of record we undo)
+	- if crashing doing undo we can find next record to undo 
+	- CLR are never themselves undone but might be redone
+	- Write end log record when finishing
+	
+Example
+XID	Status	lastLSN
+T1		c		90
+---T2		a		80
+
+pagID	recLSN
+p3		10
+----p4		20
+---p5		30
+p4		70
+
+flush log until pageLSN when page gets written to disk
+
+
+

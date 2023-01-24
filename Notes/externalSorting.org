@@ -1,0 +1,61 @@
+
+* Cost algorithms
+** Ram Model
+** IO model
++ transfer data from disk in large pages
++ Count number of IO performed
++ Assumes IO dominates the cost
+
+* 2-way external merge sort
+Uses two phases like merge-sort
+** Phase 1
++ Read one page from disk at a time
++ Sort the page in memory
++ Write sorted page to disk in a temporary file - this is a /run/
++ Sorting n pages produces n runs
++ We use only 1 buffer page
+
+*** Example
+For instance, assume we have the following input file, each array is a
+disk
+[3,4] [6,2] [9,4] [8,7] [5,6] [3,1] [2]
+then we take each page in at a time, sort it and write it back to give result
+[3,4] [2,6] [4,9] [7,8] [5,6] [1,3] [2]
+
+*** Cost
++ IO model: We load one page, sort it write it back. This is 2N where
+  N is the number of pages
++ Memory mode: O(N*M*log(M)), where M is the size of each page. So we
+  sort N pages in time O(M*log(M))
+
+** Phase 2
++ Pass 1 merge two runs. They each have length 1 page and produce output
+  length 2 page
++ Now each run has length 2 page. Merge two runs of length 2 -> runs of
+  length 4 page
++ continue until one run of length N (each run has M elements)
+We use 3 buffer pages - two for the runs to be merge, and the third
+for the output.
+  
+How does performance look like?
++ Each pass reads all N pages and writes them back - 2N
++ We do ceil(log2(N)) + 1 passes.
++ O(N*log2(N))
+
+** Improvements
++ Cost depends on number of passes - base of the logarithm.
++ Number of passes depends on fan-in during merge
++ Number of passes depends on number of runs produced.
+
+* Multi-way External Merge Sort
+** Phase 1
++ Read B pages and sort them and write out B pages. Each of the B
+  pages as M items still. But we now have N/B Runs, since for each B
+  pages we only write a single run
++ This Produces N/B runs
++ Cost is still 2N since we read and write a page
+  
+  
+
+
+

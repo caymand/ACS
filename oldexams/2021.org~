@@ -1,0 +1,145 @@
+* 1
+Other computer
+
+* 2
+** 2.1
+I would measure the average latency pr. successful query. This helps
+us understand how long a query typically takes
+We can also measure the total throughput of queries - that is how many
+queries can we handle per second. This gives a grasp to how many
+queries the two systems can handle
+
+remember: throughput=1/latency
+
+Ratio of aborted transactions since this tells us how effective
+optimistic concurrency control is versus how many deadlock locking
+based approach experiences.
+
+** 2.2
+Workloads
+For workload i would use an ensemble of queries that i know were run
+against another in-memory database - realistic workload.
+
+Parameters
+Parameters for the workload is the
+top-k used queries.
+Length of queries
+Num tables used
+Read/write ratio
+
+Measurements
+I would use interval timer to measure latency of
+each query. For throughput i would use event-count where an event is a
+commit.
+
+It was not in-memory i would check event-count for page swaps
+and IO calls.
+
+* 3
+** 3.1
+*** 3.1
+T1 R(X)    R(Y)       W(Y) C
+T2                                          R(Y) W(Y) W(Z) C
+T3              W(Z)          R(X)  W(X) C
+
+This is not serial since the actions of the transactions are
+interleaved. It is serializable since the outcome is as if T2, T1 and
+then T3 had run
+(conflicts are: T1->T3, T3 -> T2, T2 -> T1, T1 -> T2 
+
+*** 3.2
+T1             R(X)              R(Y)       W(Y)      C
+T2                          R(Y)        W(Y)     W(Z)   C
+T3 W(Z)  R(X)        W(X) C
+We have a cycle in the serializability graph with  T1->T2, T2->T1, and
+therefore there can be no equivalent serial schedule
+
+*** 3.3
+T1                R(X) R(Y) W(Y)  C
+T2  R(Y)    W(Y)                    W(Z) C
+T3                                          W(Z) R(X) W(X)
+
+T1 gets exclusive lock while T2 has shared lock so not
+possible. Conflicts are: T2 -> T1, T1 -> T3, T2 -> T3, no cycle so it
+is conflict serializable.
+
+*** 3.4
+T1                              R(X)                   R(Y)    W(Y) C
+T2         R(Y)                        W(Y)    W(Z) C
+T3    W(Z)       R(X)  W(X)  C
+or a serial schedule
+
+Conflicts: T3->T2, T2->T1
+
+*** 3.5
+1. Yes
+2. No, since T2 acquires write lock on y while T1 has shared lock and holds
+   it since it needs a later upgrade
+3. Yes
+4. yes
+
+** 3.2
+Ta   R(X) W(X)
+Tb              R(X)
+Tc                    R(X)
+If Ta decides to abort, then since Tb and Tc have a dirty read, they
+need to abort as well. Furthermore it is allowed by C2PL since Ta
+drops lock on X after the write
+
+** 3.3
+*** 3.3.1
+Yes Tb will wait for the lock on X hold by Ta. At the same time Ta
+waits for lock on y hold by Tb.
+
+*** 3.3.2
+Yes, Ta needs to acquire exclusive lock on Y before it can start
+dropping locks, but Tb needs lock exclusive lock on X before it can
+start dropping shared lock on Y.
+
+* 4
+** 4.1
+LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
+------------------------------------------------------------
+1                          begin c
+2                          end c
+3     0           T3       Update   P42           0
+4     0           T2       Update   P42           -
+5     0           T1*      Update   P66           -
+6     4           T2       Commit   P42           -
+7     3           T3       Commit   -P66           -
+8     5           T1       Update   P65           -
+9     6           T2       end      -             -
+10    8           T1       Update   P65           -
+###CRASH###
+(there cannot be an end record for T3 since otherwise it would be
+removed from Xact table)
+
+** 4.2
+1. Winner={T2, T3} since they commit, loser={T1} since this does not
+   commit and is active
+2. Redo-start=recLSN 3, since this is the smallest recLSN in the dirty
+   page table
+   Undo-start=10, since this is the largest lsn of the loser
+   transaction
+   Undo-end-5 since this is the oldest action of T1
+3. LSN 3, 4, 5,8,10 since these are updates on a dirty page
+4. LSN 10, 8, 5 since the only loser is T1 and this is its updates
+5. 
+LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
+------------------------------------------------------------
+1                          begin c
+2                          end c
+3     0           T3       Update   P42           0
+4     0           T2       Update   P42           -
+5     0           T1*      Update   P66           -
+6     4           T2       Commit   P42           -
+7     3           T3       Commit   -P66           -
+8     5           T1       Update   P65           -
+9     6           T2       end      -             -
+10    8           T1       Update   P65           -
+###CRASH###
+11                T3       END      -             -
+11   -            T1       CLR      -             8
+12                T1       CLR      -             5
+12                T1       CLR      -             0
+13                T1       END

@@ -1,0 +1,23 @@
+* 1
+other computer
+* 2
++ Throughput
++ Latency
++ Performance Metrics
++ Workload - synthetic, realistic
++ Workload parameter
++ Experiment choice - event count, sampling, statistics, interval
+  timers
+
+* 3
++ Conflict equivalent
+  Two schedules with same set of actions on the same transactions and
+  every pair of conflicting actions are order the same way.
+  So if there are two conflicts they should appear in the same order,
+  c1, c2 in both schedules. The other cannot have conflict c2, c1.
++ Serializable schedule
++ Conflict serializable
+  Conflict equivalent to some serial schedule.
+  So if we take this schedule with conflicts, and a serial schedule
+  then the conflicts are in the same order.
++ 

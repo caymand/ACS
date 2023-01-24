@@ -1,0 +1,49 @@
+* A3
+Throughput:
++ sum_workers (number of succussful customer interactions for worker
+  i)/total time taken in actual runs for worker i
+
+Latency
++ Workload Latency (time for thread to finnish workload)
+  average_latency = sum(elapsed time of each worker)/num_worker
+  average time spent per worker
++ Interaction latency (latency for each customer interactions)
+  average_latency = sum(collected_latency)/num customer interactions
+  time spent per interaction
+
+
+* Linear vs Centralized 2PC
+** Linear
+We send the responds in chain.
+Process i sends the following process
+- r_i sends the response r_i & r_(i-1) to P_(i+1)
+The rightmost participant Pn will make the commit decision
+and send the decision back in the chain and P1 sends commit to
+coordinator.
+There is a natural order, so the neighbors are obvious, and Pn is
+obvious.
+Additionally the coordinator starts the commit.
+
+*** Exercises
+1.
++ 4n for centralized, 3n if we disregard ack
++ 2n for linear - everyone sends message with vote to the next, and
+  when it receives the aggregate from i+1 it sends ack(with commit
+  status) to i-1. However, the 
+  rightmost process will have the final decision that it sends down
+  the chain and back to coordinator.
+2.
++ Linear 2tn, since each node sends 2 messages, each takes time t, and
+  there are n nodes
++ Centralized 4t, since coordinator in 0 time sends the request, and
+  all n nodes send vote. This takes 2t and is done twice.
+3.
++ We do not now if a process is failing or if it is slow. Thereby, the
+  whole chain will wait for an ack before it can make the decision.
++ Failing after having sent reply - we succeed since we have sent on
+  the commit
++ Fail after prepare - half waits for reply and other half have
+  committed
++ 
+    
+  
