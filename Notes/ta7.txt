@@ -1,0 +1,59 @@
+	Exercise 1
+-------------
+Consider a system that, instead of employing the traditional distributed commit 2PC
+protocol, the system employs a linear protocol for committing a distributed transaction.
+A process P waits for a message from its left neighbor.
+
+If P receives YES and its own vote Is YES, then P forwards YES to its right neighbor.
+Otherwise, P forwards NO.
+
+The rightmost process Pn  will have all the information it needs to make a decision. If it
+receives a YES and its own vote is YES , then the decision is COMMIT, otherwise the
+decision is ABORT. After that, it forwards the decision to the left neighbor, and so on.
+
+Each process that receives the decision message decides accordingly and then forwards
+that message to its left neighbor until the coordinator receives the message.
+
+1.
+If there are n > 2  participants, how many messages are sent when
+performing centralized 2PC compared to linear 2PC?
+
+	- Linear
+		1 message forward, with your vote
+		1 message backword with the decision
+		Total 2*n messages
+	- Centralized
+		Coordinator sends prepare to n participants
+		Each of the n participant answers with vote
+		Coordinator answers with decision to each n participants
+		Each n participants answers with an ack
+
+		Total is 4*n messages
+
+2. How much time at least will it take when performing a
+centralized 2PC compared to a linear 2PC?
+
+	- Linear
+		If it takes tim t to transmit a msg then due to the ordering of messages
+		we cannot send a msg until we receive from the previous.
+		Making the time 2*t*n
+	Centralized
+		Again, assuming transmission tim t
+		4*t
+		since the participants can process in parallel
+
+3. What is the outcome of the protocol if one process fails in the
+linear 2PC?
+
+	- Failure before receiving vote  from left
+		In this case, we just stall.
+		Maybe we can detect the stall and abort
+	- Failure after sending vote, but before receiving decision
+		In this case we cannot pass on the decision to the remaining processes
+		The processes from Pn, Pn-1,...,Pi+1 think we have a commit
+		and the processes pi-1,pi-2... will just be waiting.
+		We might assume abort after a timeout causing some processes to think
+		it is a commit and the other half an abort.
+		However, if the decision was abort, then abort after timeout is fine.
+	- After passing along the decesion to the left neighbor
+		This is safe and nothing happens since the process was done anyhow

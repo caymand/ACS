@@ -32,6 +32,14 @@ Byzantine failure model
     - Give bad or malicious output
 2PC
 - Protocol
+	+ Coordinator sends prepare
+	+ Participants answer with vote
+	+ Coordinator sends decision
+	+ Participants ACK
+	Optimized 2PC we can ignore the ACK, since we can give result
+	to the client after sending decision
+	- If a participant fails, then after restart it can see that it wrote a commit log
+	- It can then ask the coordinator for status and maybe perform the Xact
 -Failure
 	In case of failure after commit or abort is written but no end.
 	- Redo/undo the transaction
@@ -146,3 +154,50 @@ Join
 Latency
 	- The time measured between a change in the input system
 	and the measured change in the output system.
+Aries
+- Analysis
+    	Starts after the last checkpoint
+- Redo
+    	Start at the first recLSN in the dirty page table
+    	From here we lost the state before the crash
+- Undo
+    	Start from the last LSN of a loser Xact
+    	In general this will also be the largest LSN in th Xact-table
+    	but not necessarily since a commit Xact without and end record
+    	will still be in the Xact-table
+Log-tail
+	- Written to stable storage in two situations
+		1. When a Xact commits.
+		The force happens even with a no force approach.
+		2. Every update log record
+		This makes it possible to trace back loser Xact
+		so we can see which were still running
+
+Deadlock detection
+	- Local deadlock prevention
+		Transaction Ti requests a lock and Tj holds a conflicting lock.
+		There are two ways to resolve the deadlock, using timestamps
+		to establish priority:
+
+		+ Wait-Die
+			If Ti has higher priority it can wait
+			Otherwise it is aborts
+		+ Wound-Wait
+			If Ti has higher priority abort Tj
+			Otherwise Ti waits
+	- Local deadlock detection
+		The lockmanager maintains waits-for graphs when giving locks
+	- Global deadlock detection
+		We have three ways to deal with deadlocks
+		-Centralized
+			Centralized component constructs waits for graphs
+			and handles deadlocks
+        	- Hierachial
+        		Hierachy of sites each sending waits for graphs to parent sit
+        		I assume any hierachy can deal with a deadlock
+        	- Timeout
+        		If a transaction has waited long enough abort it
+        		and see if any transaction occur
+Fundamental abstractions
+	- Statemachine
+	- Memory

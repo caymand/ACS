@@ -1,0 +1,46 @@
+	Exercise 1
+------------
+1. What are the local wait-for graphs for the three nodes?
+	Node 1:
+	T3 -> T2
+
+	Node 2:
+
+	Node 3:
+	T2 -> T3
+
+2. Is there any deadlock in the system?
+	Yes there is a global deadlock where T3 wais for T2 in Node 1
+	At the same time T2 waits for T3 in Node 3 making a global cycle
+
+3. What solutions can the system nodes employ to detect a
+deadlock? Explain in detail how one of the solutions is applied in
+the context of the system provided in this exercise.
+
+	-Centralized
+		Centralized component constructs waits for graphs
+		and handles deadlocks
+
+		We can make any node the responsible, but let us assume it is
+		node 1 since it makes the first action. We can assume then that
+		it gets the waits-for graphs from each node when requesting locks.
+		Node 1 can then log the decision to abort T2 and T3,
+		and informs Node 3 that is part of the deadlock of the same
+	- Hierachial
+		Hierachy of sites each sending waits for graphs to parent sit
+		I assume any hierachy can deal with a deadlock
+
+		This makes no sense in this example
+	- Timeout
+		If a transaction has waited long enough abort it
+		and see if any transaction occur
+
+		T2 starts waiting first, so presumably its timer will expire first
+		causing this Xact to be aborted.
+
+4. At the end of the schedules, what transaction(s) will be able
+to issue a commit?
+	If we use timeout for deadlock prevention, then T3 and T1 are allowed.
+
+	In case of centralized deadlock detection, both are aborted.
+	Node 1 will aborts its transactions and notify Node 3

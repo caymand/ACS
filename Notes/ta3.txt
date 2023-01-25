@@ -19,4 +19,8 @@ For concurrent execution
 	Latency - latency for each worker / number of works
 
 4. Concurrency effect on latency and throughput
+	Throughput can be better, since while waiting for I/O
+	we can handle other actions
 
+	Latency might not be better, since the observed output
+	might be delayed due to context switching

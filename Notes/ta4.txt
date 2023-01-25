@@ -1,0 +1,226 @@
+	Exercise 1
+-------------
+1.
+We only need to undo because of stealing pages for optimization.
+This means, if we have nothing on disk we will not have half finnished transactions.
+Undo would therefore not be needed.
+
+2.
+We redo actions to get to the same state as before the crash.
+This will still be needed?
+
+3.
+If updates are forced to disk when a Xact commits,
+then we still need undo for the non-committed Xacts that might have stolen pages.
+
+4.
+This is about forcing pages.
+We do not need to redo actions, because we already have the state of winners
+before the crash.
+
+	Exercise 2
+-------------
+Aries phases
+
+Analysis
+	Starts after the last checkpoint
+Redo
+	Start at the first recLSN in the dirty page table
+	From here we lost the state before the crash
+Undo
+	Start from the last LSN of a loser Xact
+	In general this will also be the largest LSN in th Xact-table
+	but not necessarily since a commit Xact without and end record
+	will still be in the Xact-table
+
+	Exercise 3
+-------------
+1. the state of the transaction and dirty page tables after the analysis phase
+
+	State before checkpoint
+	--------------------
+	Xact-Table:
+	Xact-ID	Status	lastLSN
+	T2		Running	2
+	T1		Commit	3
+
+	DPT
+	pageID	recLSN
+	C		1
+	B		2
+
+	State After checkpoint
+	--------------------
+	Xact-Table:
+	Xact-ID	Status	lastLSN
+	T3		R		7
+
+
+	DPT
+	pageID	recLSN
+	C		1
+	B		2
+	A		7
+
+2. the sets of winner and loser transactions
+	Winner = {T1, T2}
+	Loser = {T3}
+
+3. the values for the LSNs where redo starts and undo ends
+	Redo start - recLSN 1
+	Undo-end - LSN 7
+
+4. the set of log records that may cause pages to be rewritten during redo?
+
+	All the updates starting from LSN 1
+	- These have LSN {1, 2, 7, 8}
+
+5. the set of log records undone during undo?
+	We only need to undo the losers which is T3, so undo log 7
+
+6. the contents of the log after the recovery procedure completes?
+
+	Before reovery
+	LSN	prevLSN	transID	type	pageID
+	---------------------------------
+	1	0 		T1 		update C
+	2 	0 		T2 		update B
+	3 	1 		T1 		commit
+	4, 5 					begin checkpoint
+						end checkpoint
+	6 	3 		T1 		end
+	7 	0 		T3 		update A
+	8 	2 		T2 		update C
+	9 	8 		T2 		commit
+	10 	9 		T2 		end
+			CRASH!!!
+
+	After reovery
+	LSN	prevLSN	transID	type	pageID	undoNextLSN
+	-----------------------------------------------
+	1	0 		T1 		update C
+	2 	0 		T2 		update B
+	3 	1 		T1 		commit
+	4, 5 					begin checkpoint
+						end checkpoint
+	6 	3 		T1 		end
+	7 	0 		T3 		update A
+	8 	2 		T2 		update C
+	9 	8 		T2 		commit
+	10 	9 		T2 		end
+			CRASH!!!
+	11	7		T2		Abort -		-
+	12	11		T2		CLR:undo T3 LSN
+	13	12		T2		end			-
+
+	Exercise 3
+-------------
+Status is U for abort and update since this indicates UNDONE
+Status is C for commit
+1.
+	Before Recovery
+	-------------
+	LSN	PrevLSN	Xact-ID	type		undoNextLSN	pageID
+	01	-		-		B_CKPT	-			-
+	05	-		-		E_CKPT	-			-
+	10 	-		T1 		Update 	-			P5
+	20 	-		T2 		Update 	-			P3
+	30 	10 		T1 		Abort	-			-
+	40 	30		T1 		CLR:Undo LSN 10		-
+	45	40		-		END		-			-
+	50 	-		T3 		Update 				P1
+	60 	20 		T2 		Update 				P5
+						CRASH 1 !!!
+	Xact-Table:
+	Xact-ID	Status	lastLSN
+	T2		U		60
+	T3		U		50
+
+
+	DPT
+	pageID	recLSN
+	P5		10
+	P3		20
+	P1		50
+
+	Losers = {T2, T3}
+	After Recovery
+	-------------
+	LSN	PrevLSN	Xact-ID	type		undoNextLSN	pageID
+	01	-		-		B_CKPT	-			-
+	05	-		-		E_CKPT	-			-
+	10 	-		T1 		Update 	-			P5
+	20 	-		T2 		Update 	-			P3
+	30 	10 		T1 		Abort	-			-
+	40 	30		T1 		CLR:Undo LSN 10		-
+	45	40		-		END		-			-
+	50 	-		T3 		Update 				P1
+	60 	20 		T2 		Update 				P5
+						CRASH 1 !!!
+	70	60		T2		Abort	-			-
+	80	50		T3		Abort	-			-
+	90	70		T2		CLR 60	20			P5
+	100	80		T3		CLR 50	-			P4
+	110	100		T3		END
+	120	90		T2		CLR 20	-			P5
+	130	120		T2		END
+
+2.
+	Before recovery
+	-------------
+	LSN	PrevLSN	Xact-ID	type		undoNextLSN	pageID
+	01	-		-		B_CKPT	-			-
+	05	-		-		E_CKPT	-			-
+	10 	-		T1 		Update 	-			P5
+	20 	-		T2 		Update 	-			P3
+	30 	10 		T1 		Abort	-			-
+	40 	30		T1 		CLR:Undo LSN 10		-
+	45	40		-		END		-			-
+	50 	-		T3 		Update 				P1
+	60 	20 		T2 		Update 				P5
+						CRASH 1 !!!
+	70	60		T2		Abort	-			-
+	80	50		T3		Abort	-			-
+	90	70		T2		CLR 60	20			-
+	100	80		T3		CLR 50	-			-
+	105	100		T3		END
+						CRASH 2 !!!
+
+	We can reuse the analysis from previous, and we see that T3 ends
+	Xact-Table:
+	Xact-ID	Status	lastLSN
+	T2		U		90
+
+
+	DPT
+	pageID	recLSN
+	P5		10
+	P3		20
+	P1		50
+
+	Losers = {T2}
+
+	After recovery
+	-------------
+	LSN	PrevLSN	Xact-ID	type		undoNextLSN	pageID
+	01	-		-		B_CKPT	-			-
+	05	-		-		E_CKPT	-			-
+	10 	-		T1 		Update 	-			P5
+	20 	-		T2 		Update 	-			P3
+	30 	10 		T1 		Abort	-			-
+	40 	30		T1 		CLR:Undo LSN 10		-
+	45	40		-		END		-			-
+	50 	-		T3 		Update 				P1
+	60 	20 		T2 		Update 				P5
+						CRASH 1 !!!
+	70	60		T2		Abort	-			-
+	80	50		T3		Abort	-			-
+	90	70		T2		CLR 60	20			-
+	100	80		T3		CLR 50	-			-
+	105	100		T3		END
+						CRASH 2 !!!
+	# we do not need to abort T2 again, since the abort has been redone
+	# we do nothing for the CLR at LSN 90, since this was redone
+	# and we can instead follow its undoNextLSN
+	110	90		T2		CLR 20	-			-
+	115	110		T2		END		-			-
