@@ -1,0 +1,97 @@
+	Exercise 1
+-------------
+1.
+Phase 1:
+- The goal of this phase it to load the buffer pages and produce sorted runs
+- We load B buffer pages
+- Then we sort each B buffer page
+- Write out a run of the sorted B buffer pages stacked on top
+- Note since we load B-buffer pages, the stack is sorted
+- This gives us N/B runs produced
+Phase 2:
+- The goal here is to merge the results of the pervious runs
+- we load as many runs as possible into main memory (each run is sorted)
+- Then we move pointers from each run while merging the results
+- Producing a new run in the output buffer
+- In case we cannot have all runs in memory we need multiple passes
+
+2.
+Relation has 10,000,000/100 = 100,000 Blocks
+Block size is 1,6 KB
+Our buffer pool is 100MB = 100,000KB
+So we can have 100,000/1,6 = 64,000 blocks in memory
+
+Phase 1 produces
+	ceil(100,000/64,000) = 2 Runs
+
+Phase 2
+- If we have R /B < B - 1 We can do it in 1 pass
+- We have  R/B <= 2 < 64,0000
+- So we only need to merge 2 runs
+	We can easily just load 1 buffer from each run at a time
+	and merge these into the output buffer and write out output buffer
+
+	Meaning it can be done in 1 pass
+
+Meaning we need 2 passes in total
+
+3.
+We need to figure out the number of I/O operations
+Phase 1 uses
+	2*100,000 = 200,000 I/O
+	Since each page is written to memory and written out
+Phase 2
+	We do 1 passes in this phase
+	Each pass uses 2N pages
+In total we us 4N = 4 * 100,000 I/O operations taking
+	400,000* 10 = 4,000,000 ms = 4,000 s
+
+	Exercise 2
+-------------
+Sequence of number:
+	22, 39, 81, 91, 7, 76, 29, 58, 84, 45, 12, 67
+Memory
+	B=3 Pages
+	Each page can store 1 number
+1.
+Phase 1
+	[22, 39, 81, 91, 7, 76, 29, 58, 84, 45, 12, 67]
+	->
+	[22, 39, 81], [7, 76, 91], [29, 58, 84], [12,45,67]
+
+	Producing 4 runs of length 3 pages
+Phase 2
+	We have 2 input buffers and 1 output buffers
+	[22, 39, 81], [7, 76, 91], [29, 58, 84], [12,45,67]
+	-> Pass 1
+	[7, 22, 39, 76, 81, 91], [12, 29, 45, 58, 67, 84]
+	-> Pass 2
+	[7, 12, 22, 29, 39, 45, 58, 67, 76, 81, 84, 91]
+And now we are done
+
+2.
+We do it in 3 passes - 1 pass for phase 1 and 2 passes for phase 2
+We see
+	ceil(R/B)=ceil(12/3)=4 < B -1 = 2
+	Implying that we also need two passes
+
+	log_B-1(N/B)=log_2(4)=2
+
+Exercise 3
+1.
+Getting ranking within country:
+We can do grace-hash join, since this join operation
+requires sqrt(R)<B for two passes
+- We know that the square root of the relation can be in memory so this is a good choice
+- This does 4*(R+R) I/O operations and 3 * (R+R) not counting final write
+We calculate the player ranking while in the second phase of the algorithm
+when we have matching hash
+
+Country avg:
+Next we calculate the average of all countries.
+This can be done by sorting the relation on country
+- We can do sorting in 2 passes when sqrt(R) < B which we know is the case
+We can do aggregation while doing the merging by updating the total count of players
+and total number of points pr. country and then divide the two.
+
+Sorting does 3*(R+R) or 4* (R+R) I/O

@@ -36,7 +36,12 @@ then we take each page in at a time, sort it and write it back to give result
 + continue until one run of length N (each run has M elements)
 We use 3 buffer pages - two for the runs to be merge, and the third
 for the output.
-  
+
+Number of passes:
++ First we do 1 initial sort of each page.
++ Then we merge two runs. This keeps on going
++ So we divide by 2 every time and get log_2(N) + 1 (1 is the initial) passes
+
 How does performance look like?
 + Each pass reads all N pages and writes them back - 2N
 + We do ceil(log2(N)) + 1 passes.
@@ -54,8 +59,8 @@ How does performance look like?
   pages we only write a single run
 + This Produces N/B runs
 + Cost is still 2N since we read and write a page
-  
-  
+
+
 
 
 

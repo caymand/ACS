@@ -1,0 +1,22 @@
+
+	Exercise 1
+-------------
+1. Latency
+Latency is the time to do an action.
+Formally, it is the time measured between a change in the input system
+and the measured change in the output system.
+
+2. Throughput
+Defined as 1/Latency
+The rate at which a service can do useful work given a workload of requests
+
+3. Latency and Throughput
+For serial execution
+	Throughput = 1 / Latency
+For concurrent execution
+	No direct link but we can look at the average when executing in parallel
+	Throughput - sum of useful work done by each worker/machine
+	Latency - latency for each worker / number of works
+
+4. Concurrency effect on latency and throughput
+

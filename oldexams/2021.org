@@ -45,7 +45,7 @@ T3              W(Z)          R(X)  W(X) C
 This is not serial since the actions of the transactions are
 interleaved. It is serializable since the outcome is as if T2, T1 and
 then T3 had run
-(conflicts are: T1->T3, T3 -> T2, T2 -> T1, T1 -> T2 
+(conflicts are: T1->T3, T3 -> T2, T2 -> T1, T1 -> T2
 
 *** 3.2
 T1             R(X)              R(Y)       W(Y)      C
@@ -124,7 +124,7 @@ removed from Xact table)
    Undo-end-5 since this is the oldest action of T1
 3. LSN 3, 4, 5,8,10 since these are updates on a dirty page
 4. LSN 10, 8, 5 since the only loser is T1 and this is its updates
-5. 
+5.
 LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
 ------------------------------------------------------------
 1                          begin c
@@ -140,19 +140,19 @@ LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
 ###CRASH###
 11                T3       END      -             -
 12                T1       Abort    P65           -
-13   -            T1       CLR      p65           8  
+13   -            T1       CLR      p65           8
 14                T1       CLR      p65           3
 15                T1       CLR      p65           0
 16                T1       END
 
 * 5
 ** 5.1
-1. 
+1.
     Bob     - e1(1), e12(9)
     FacePub - e2(2), e3(3), e5(4), e7(6), e8(7), e11(8)
     Alic    - e10(9), e9(8),
     Emily   - e4(4), e6(5)
-2. 
+2.
     Bob     - (0,0,0,0), e1(1,0,0,0), (2,6,0,2)
     FacePub - (0,0,0,0), e2(1,1,0,0), e3(1,2,0,0), e5(1,3,0,0),
     e7(1,4,0,2), e8(1,5,0,2), e11(1,6,0,2)
@@ -187,7 +187,7 @@ LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
    transaction (log prepare).
    If they both respond yes, log COMMIT, and send COMMIT to Alice and
    Emily processes. If one replies NO send Abort. If Ack is received
-   by both, then log end 
+   by both, then log end
    Type, Content
    Prepare, msg to Emily
    Prepare, msg to Alice
@@ -208,5 +208,47 @@ LSN  PREV_LSN    XACT_ID    TYPE    PAGE_ID     UNDONEXTLSN
 
 
 * 6
+The Tickets table has 120, 000 pages, and Customers has 5, 000 pages.
 ** 6.1
-1. Natural join: 
+6.1.1
+Suppose there is a clustered B+ tree index on Custerms.age, and a non-clustered B+ tree index on Customers.city. Both indices are indirect indices, i.e. the data entries in the leaf nodes of the B+ Trees contain pointers to the actual data records. There are 150, 000 records having age > 50, 100, 000 records having city = "Copenhagen", and 60, 000 records meeting both conditions. Suppose each page can contain 100 records, and both indices are already fully loaded into the main memory. What are the possible approaches to answer the selection query? What is the worst-case I/O cost of using each of these approaches? Briefly explain your answer?
+
+We have a clustered index on age, so we can scan through the B+ tree and
+find the first record matching the predicate, and then linearely scan nodes of the tree.
+- This takes 150,000/100 = 1,500 I/O operations.
+We can additionally filter on the fly all the records with city = copenhagen
+so we do not do additional I/O operations
+
+We could also do a sequential scan which would be 5000 I/O operations
+
+Using index on city would worst case be 120,000 I/O operations since we could
+end up doing page swaps.
+
+** 6.2
+6.2.1
+With grace hash join we need sqrt(5,000)=71 buffer pages to do it in two passes
+for a total of 3* (120,000+5,000) I/O operations
+
+For sort-merge-join we however need sqrt(120,000+5,000)=354 buffer pages to do it in two passes.
+Therefore grace hash join is better.
+
+6.2.2
+We know we cannot do this in two passes due to memory constraints
+and we can split it into different passes.
+First we observer that sorting C produces 500
+
+6.2.3
+
+
+6.2.4
+In this case, we can do a sequential scan for the aggregation.
+They would already be grouped since they have been sorted
+So we can do it in 360,000 I/O
+
+Based on this I would choose to do Merge-Sort-Join + this sequential scan
+This has a total of 421,000+360,000 I/O operations
+
+If we had done hashing, then we would need to sort it anyways
+which alone is 360,000*5 I/O.
+
+

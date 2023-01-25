@@ -1,47 +1,49 @@
 Reading uncommitted data
-- WR anomaly
-- Dirty read
+    - WR anomaly
+    - Dirty read
 Unrepeatable Reads
-- RW anomaly
-- second read is different
+    - RW anomaly
+    - second read is different
 Overwriting uncommitted data
-- WW anomaly
+    - WW anomaly
 isolation
 -this is all or nothing atomicity
 Atomicity
 - Before or after
 Lamport logical clocks
-- e preceedes f => timetamp e < timestamp f
-- timestamp e preceedes f !=> e preceedes f
+    - e preceedes f => timetamp e < timestamp f
+    - timestamp e preceedes f !=> e preceedes f
 Vector clock
-- e preceedes f => timetamp e < timestamp f
-- timestamp e preceedes f => e preceedes f
+    - e preceedes f => timetamp e < timestamp f
+    - timestamp e preceedes f => e preceedes f
 Synchronous Replication
-- Wait for response of replicas
-- Can be primary site
+    - Wait for response of replicas
+    - Can be primary site
 Asynchronous Replicaton (not wait for response)
-- Peer to peer
-- Primary sites
+    - Peer to peer
+    - Primary sites
 All types of failure models
-- Byzantine
-- Fail soft - continue with lower degree of functionality
-- Fail stop - do not contain error but stop
+    - Byzantine
+    - Fail soft - continue with lower degree of functionality
+    - Fail stop - do not contain error but stop
 Byzantine failure model
-- Faulty process may fail at any time for any reason
-- Fail to give output
-- Give bad or malicious output
+    - Faulty process may fail at any time for any reason
+    - Fail to give output
+    - Give bad or malicious output
 2PC
 - Protocol
 -Failure
 	In case of failure after commit or abort is written but no end.
 	- Redo/undo the transaction
 	- Send abort or commit depending on status
-	If we only have a prepare but no commit, then the node is a suboordinate of the transaction
+	If we only have a prepare but no commit,
+	then the node is a suboordinate of the transaction
 	- Contact coordinator for status
 	- then redo/undo the transaction
 	- and write and end record
 	In case not even a prepare log recorc is presend  - unilateral abort
-	- We may abort a coordinator so be prepared for msgs of subordinates - reply them abort
+	- We may abort a coordinator so be prepared for msgs of subordinates
+		-reply them abort
 - Logs
 	Coordinator:
 	- Logs XactId and participants
@@ -55,3 +57,92 @@ Byzantine failure model
 	- Logs commit/aborted depending on msg from coordinator
 - Presumed abort
 Optimistic concurrency control
+- 3 Phases
+	Read
+		- Xacts read from database
+		- Make changes to local copies
+	Validate
+		Check for conflicts
+		Bookeeping
+		- Assign Timstamp before timestamp
+		- Assign timstemp to each Xact after READ phase
+		- Readset(Ti) - objects read by Ti
+		- Writeset(Ti) objects written to by Ti
+		Test 1
+		- For all Ti < Tj - timestamp of Ti less than Tj
+		- Check Ti ends before Tj begins
+		Test 2
+		- For all Ti < Tj
+		- Ti completes before Tj begins write phase
+		- And Writeset(Ti) intersection ReadSet(Tj) is empty
+			otherwise we would have a dirty read
+		Test 3
+		- For all Ti < Tj
+		- Ti completes read phase before Tj
+		- and Writeset(Ti) intersection Readset(Tj) = Ø
+			Dirty read
+		- and Writeset(Ti) intersaction Writeset(Tj) = Ø
+			Overwriting uncommitted data
+			WW conflict
+			Lost update
+		If any of the tests pass we begin write otherwise abort
+	Write
+		- Make local changes public
+Availability = (time system was running) / (time system should be runnning)
+- sum(TTF_i)/sum(TTF_i + TTR_r)
+- MTTF/(MMTF+MTTR)
+Mean time to failure
+- MTTF = 1/N * sum(TTF_i)
+Mean time to recovery
+- MMTR = 1/N * sum(TTR_i)
+END-TO-END-ARGUMENT
+    - Do not try to mask error or do anything
+    - Let the larger subsystem deal with it
+    - Only the larger subsystem can know whether the error matters
+Voting
+    - N=3 supermodule votes for reliability
+Tripple modular redundancy
+    - Voting with N=3 modules
+Reliability
+    - R(t)
+    - Propability that the module works at time t given that it worked at time 0
+Reliability supermodule
+    - Assume reliability of each module is R
+    - R^3 + 3*R^2 * (1-R) =3*R^2 +2*R^3
+    - Works if all 3 modules works
+    - Or if 1 has failed and 2 works
+    - This gives the propability
+Incorrect results
+- 1-R_supermodule
+Memoryless
+    - Reliability is memoryless
+    - Failure is independent of operating time
+Multiway external sorting
+- Number of passes
+	Phase 1:
+		Sort B pages
+		Produces Runs of length B
+
+		N/B runs
+
+	Phase 2
+		If we have p passes
+		B(B-1)^p=N
+
+		Num passes
+		p = ceil(log_B-1(N/B))
+
+		Cost of each pass
+		2N
+
+		Total cost
+		2N * ceil(log_B-1(N/B))
+- Memory
+	For two passes we need sqrt(R) < B
+Join
+- Memory for two passes
+	Grace-Hash Join: sqrt(S) where S is the smaller relation
+	Merge-Sort-Join: sqrt(R+S)
+Latency
+	- The time measured between a change in the input system
+	and the measured change in the output system.
