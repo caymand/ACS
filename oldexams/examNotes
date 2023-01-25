@@ -19,9 +19,31 @@ Vector clock
 Synchronous Replication
     - Wait for response of replicas
     - Can be primary site
+    - Good if we do not tolerate losses
 Asynchronous Replicaton (not wait for response)
     - Peer to peer
+    	- More master copies
+	- Two master copies can have conflicting changes - must be resolved
+	- Good for associative and commutative operations
     - Primary sites
+	- One copy is the "master copy".
+	Replicas subscripe to update of master copy
+ 	- Issue is how changes to master propagate
+   	- Capture changes
+   	- Apply at replicas
+   	- Some replicas can become out of sync
+State-machine Replication
+	- Active replication
+	- The state machine receives instructions in order to replicate
+Primary site Replication
+	- Passive replication
+	- Memory replication
+Multicast
+	- Uses state-machine (interpreter) replication
+	- Important that the nodes get the instructions in the same order
+		Otherwise their state will not be synchronized
+	- Distributed replication
+	- Any node can be contacted, and will propagate to the other nodes
 All types of failure models
     - Byzantine
     - Fail soft - continue with lower degree of functionality
@@ -154,6 +176,8 @@ Join
 Latency
 	- The time measured between a change in the input system
 	and the measured change in the output system.
+Throughput
+	- Ammount of usful work done in a time period
 Aries
 - Analysis
     	Starts after the last checkpoint
@@ -201,3 +225,41 @@ Deadlock detection
 Fundamental abstractions
 	- Statemachine
 	- Memory
+RPC
+	- At least once
+		Clients sends request until it receives response from server
+	- Exactly once
+		Very hard to implement
+		But often very desirable since the request is handled exactly once
+	- At most once
+		If a response is not received after a specific time
+		the client throws an error.
+In-Memory Database
+	- Stores the entire database in memory
+	- The logs are on stable storage. See :169 for when log is written
+	to stable storage
+Metrics
+	- Throughput
+	- Latency
+Workloads
+	- Synthetic
+	- Real
+View-Serializable
+Vector logical clocks
+	- a = b if they agree at every element
+	- a < b if a[i] <= b[i] for every i, but !(a = b)
+	- a > b if a[i] >= b[i] for every i, but !(a = b)
+	-  || b  if a[i] < b[i], a[j] > b[j], for some i,j
+		This is a conflict and "a"  and "b" are not comparable
+
+	This clock does imply that
+		timestamp(a) < timestamp (B)
+		=>
+		a -> b (a preceedes b)
+Lamport logical clocks
+	- Vreceiver[j] = max(Vsender[j], Vreceiver[j] 	if i != self
+				Vreceiver[j] + 1				else
+	- This clock does NOT imply that
+		timestamp(a) < timestamp (B)
+		≠>
+		a -> b (a preceedes b)
