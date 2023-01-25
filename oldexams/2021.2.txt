@@ -260,3 +260,55 @@ P4:					e4(1,2,0,1)		e6(1,2,0,2)
 
 6.
 6.1
+The first task is to select all the records in Customers,
+where age is greater than 50 and city is equal to “Copenhagen”.
+
+6.1.1: Suppose there is a clustered B+ tree index on Custerms.age,
+and a non-clustered B+ tree index on Customers.city. Both indices are indirect indices,
+i.e. the data entries in the leaf nodes of the B+ Trees contain pointers to the actual data
+records. There are 150, 000 records having age > 50, 100, 000 records having
+city = "Copenhagen", and 60, 000 records meeting both conditions.
+
+Suppose each page can contain 100 records, and both indices are already
+fully loaded into the main memory. What are the possible approaches to
+answer the selection query?
+What is the worst-case I/O cost of using each of these approaches?
+Briefly explain your answer?
+
+	- Sequential scan
+	Scans through the entire customer table with 5,000 pages and thus
+	also 5,000 I/O
+
+	-We can use the index on Customers.age to get a superset of records.
+	We just scan through the index, until we find the first matching record.
+	Then since the index is clustered on age, we can quickly scan through
+	all matching records on age and on the fly select those with city="Copenhagen".
+	Since we have 150,000 we use 150,000/100 = 1,500 pages and 1,500 I/O since
+	we had an index on Customers.age
+
+	- Using both indicies
+	First we check if the data entry of age is contained in the data entry of city
+	If not discard it.
+	This means we have to lookup the age first, so we end up with
+	1,500 I/O
+
+
+	- Alternatively, we use index on Customers.Age to get the first 150,000 records.
+	This takes 1,500 I/O.
+	Then we use index on Customers.city to get the remaining 100,000 records.
+	Since this is a non-clustered index we can worst case spend 100,000 I/O.
+	Then we do the intersection on the two
+	Very slow due to using non-clustered index on Customers.city
+
+6.2
+Another task of the data analyst is to produce sales statistics:
+“for each customer, return the total number of tickets purchased by them”.
+The schema of the results should be (cID, name, age, city, nTickets).
+Suppose the database server used by the data analyst has 200 buffer pages.
+Answer the following questions.
+
+6.2.1
+The first step is joining the tables Tickets and Customers on cID.
+Consider Grace Hash Join and Sort Merge Join.
+Which one of them is the most efficient to perform this step?
+Briefly explain your answer.
