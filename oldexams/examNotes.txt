@@ -185,8 +185,8 @@ Hash-Sort
 		counting the last write
 Join
 - Memory for two passes
-	Grace-Hash Join: sqrt(S) where S is the smaller relation
-	Merge-Sort-Join: sqrt(R+S)
+	Grace-Hash Join: sqrt(S) < B where S is the smaller relation
+	Merge-Sort-Join: sqrt(R+S) < B
 - I/O Operations
 	Grace hash-join = 3 * (R+S)
 	Merge-Sort-join = 3 * (R+S)

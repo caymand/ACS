@@ -1,1 +1,16 @@
 7.
+7.1 Selection
+7.1.1
+In case of no index, we can do a linear scan through the table.
+The I/O cost will be 25,000 since we have to consider each table
+
+7.1.2
+We can in worst case do an I/O pr. record in the index, since it is non-clustered.
+Therefore we can risk 50,000 I/O actions.
+Here it can be better to just do sequential scan.
+
+7.2 Join and Aggregate
+7.2.1
+To do the join in 2 passes we have to use grace hash join
+	sqrt(1,500) < 150
+The I/O cost will then be 3*(25,000+1,500)=78,500 I/O
