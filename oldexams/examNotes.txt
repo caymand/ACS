@@ -156,6 +156,8 @@ Multiway external sorting
 		N/B runs
 
 	Phase 2
+		If N/B < B-1 we can do it in 1 pass
+
 		If we have p passes
 		B(B-1)^p=N
 
@@ -169,10 +171,25 @@ Multiway external sorting
 		2N * ceil(log_B-1(N/B))
 - Memory
 	For two passes we need sqrt(R) < B
+	We need the number of runs to be
+		R/B < B -1
+	To do phase 2 in 1 pass
+- I/O Operations
+	- For two passes - 4N/3N since we read and write a page twice
+		and 3N when we do not count output write
+Hash-Sort
+	- Memory
+		We need sqrt(R) < B
+	- I/O
+		For two passes it can be done in 3N I/O when not
+		counting the last write
 Join
 - Memory for two passes
 	Grace-Hash Join: sqrt(S) where S is the smaller relation
 	Merge-Sort-Join: sqrt(R+S)
+- I/O Operations
+	Grace hash-join = 3 * (R+S)
+	Merge-Sort-join = 3 * (R+S)
 Latency
 	- The time measured between a change in the input system
 	and the measured change in the output system.
@@ -223,8 +240,19 @@ Deadlock detection
         		If a transaction has waited long enough abort it
         		and see if any transaction occur
 Fundamental abstractions
-	- Statemachine
+	- Statemachine/Interpreter
+		+ Instruction reference
+			Where to find next instruction
+		+ (Instruction) Repetoire
+			Operations supported
+		+ Environment reference
+			Reference to current state/environment
 	- Memory
+		+ Read
+		+ Write
+	- Communication linke
+		+ Send
+		+ Receive
 RPC
 	- At least once
 		Clients sends request until it receives response from server

@@ -312,3 +312,38 @@ The first step is joining the tables Tickets and Customers on cID.
 Consider Grace Hash Join and Sort Merge Join.
 Which one of them is the most efficient to perform this step?
 Briefly explain your answer.
+
+In order to do it in 2 passes we need to use Grace Hash joing
+	sqrt(5,000)=71<200
+Since we only can do it in 2 passes with this join method it is more efficient.
+It will use
+	3*(120,000+5)=375,000 I/O
+
+6.2.2
+Do not know what tournament sort is
+
+6.2.3
+The output should be sorted, so we need to use a sorting algorithm.
+Phase 1 of 200-way external sorting produces
+	360,000/200 =1,800 runs
+We do not have that 1,800 < 200-1 so we cannot do phase 2 in 1 pass.
+Instead we can do it in log_199(1,800) < 2 passes
+Each pass uses 2 I/O pr. page, except we do not count the last write.
+Making the total 5 I/O pr. page with total cost
+	5 * 360,000
+6.2.4
+We consider an approach where we do no optimization on sort merge join
+Sorting C is done in 2 passes for a total of 4 * 5,000=20,000 I/O
+Sorting T cannot be done in 2 passes.
+Phase 1 gives us
+	120,000/200 = 600 Runs
+	And 4*5,000 I/O
+Phase 2 can be done in 2 passes.
+This makes the total I/O cost 4*5,000 + 6*120,000=740,000 I/O
+Then if we just naivily scan through the results with on the fly aggregation
+-------
+I think the just wan this 360,000 I/O as the answer
+then this can be done in an additional 360,000 I/O
+	Total = 740,000+360,000 I/O = 1.1M I/O
+This is still far less than just sorting the results after grace-hash join
+Meaning it is better to just SMJ and just
