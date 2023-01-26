@@ -1,0 +1,235 @@
+
+* Goal Terms
+Communication abstractions
+Message oriented middleware
+Base methodology
+CAP theorem
+Streams and multicast
+
+
+* Towards distribution
+Independent services for different data
++ Improves scalability and availability (see last weeks topics)
++ We need a communication strategy
+
+** Fundamental abstractions
++ Memory
+  We had just two operations =read/write=
++ =Interpreter=
+  This is the computer so to say - how we expect the computer to
+  work. Due not however, that it can be a chip, language and more
+  It primarily consists of
+  - Instruction repertoire - set of instructions the interpreter can
+    do
+  - Instruction pointer - where the interpreter finds the next
+    instruction
+  - Environment (reference) - the current state, or refrence to it, in
+    which the interpreter must do its next action/instruction
++ =Communication links=
+  This provides facility for physically seperate components to
+  communicate.
+  It provides two forms of communication
+  - Send
+  - Receive
+  The network implements and abstraction of this link (4 layers of the
+  network stack). It is a layered approach where the current layer
+  provides services solely based on what it does and the layer below
+  - Application - http/https
+  - Transport - TCP/UDP
+  - Network - IP
+  - Link - ethernet
+
+  The two lowest layers are implemented everywhere -  the
+  functionality depends on the layer below it, so it needs to be
+  implemented
+  The two upper layer are implemented only at the hosts - it is only
+  here they are needed.
+  
+* End-to-end argument
+The application knows best the desired behavior of the intended
+function. Therefore, at the end-nodes, the application must do some
+checks. This guarantees some properties in networking.
+In other words, TCP is not enough.
+
+Some functionality in the communication system needs help from
+application
+High level checks (possibly at application layer) necessary but costly
+System can provide performance enhancement to reduce error frequency
+- Here we simply mean the system should try to reduce frequency of error
+
+* Careful file transfer application
+** First attempt
++ Read file from disk into memory
++ Pack the bytes into packages and pass to communication system(this
+  can be the network stack)
++ Receive packages and re-organize into memory
++ Write to disk
+
+Things might go wrong during sending of data and reding/writing from
+disk to memory
+** Better approach
+Use the end-to-end argument - test if the end-to-end function work
++ In case it does not work retry the entire operation
++ Careful file transfer uses checksum - retransfer on error
+It should be noted that reliable data transfer such as TCP might not
+be enough to eliminate all threats
+ 
+
+ 
+
+** The problem
+Multiple re-transfers can take a while, so it is not enough for the
+communication system to just re-transfer
+
+** Alternative
+Do a best efforts approach.
++ Communication system should offer some reliability to reduce
+  frequeny of re-transmissions (optimize performance)
++ It should not give perfect reliability
++ Example: Could be like error detection in link-layer
+
+* End-to-end Transport protocols
++ Udp - with ports + checksums
++ TCP
++ RTP
+2PC(two-phase-commit) actually also promises this.
+Replication and backup also promises this since we can check for
+errors and fallback
+
+* Types of communication
+** Synchronous vs Asyncrhonous
+1. Sync at request submission
+2. Sync at request delivery
+3. Sync after being processed bye recipient
+
+** Transient vs Persistent (Temporal decoupling)
+** Examples
+Email is persistent + async
+
+Erlang is async + transient (data disappears)
+RPC is transient + sync
+Online chat(1,2) is Sync + persistent
+- It has 1,2 since the sender and reciever must be in sync when
+  message is sent, and when it is delivered
+
+* Types of communication Abstractions
+** RPC
+Details of communication is hidden
+** Message-oriented
+Explicit communication - explicit send-receive
++ Point-to-point messages
+Can be sync and async
+Transient and Persistent
+
+* Message-oriented persistent communication
++ Uses queue - sender and receiver are loosely coupled
+  If receiver is down, the message wait wihtout sender thinks about it
++ Modes of operation
+  Sender + receiver running
+  Sender running, receiver passsive
+  Sender passive, receiver running
+  Passive sender + receiver
+
+* Queue interface
+** Operations
+*** Put
+Puts message into queue
+*** GET
+Gets first message and blocks
++ I think it blocks when there are no messages or in loading of the
+  message
++ Might be like call in erlang  
+*** Poll
+Check for message and remove-first (non-blocking)
++ Might be like cast in erlang
+*** Notify
+Handler that runs when message is added
+
+
+
+** Details
+Source/destinations are decoupled by queue names
++ Source sends to a send queue that sends to the next queue all the
+  way to receiver.
+
+Relays - store + forward message
++ I guess they are a type of queue
+Brokers - gateways that transformers message formats
++ BrokerClient in DanskeBank
+
+* Other Communication abstractions
+Read in compendium
+** Stream-Oriented
+** Multicast
+Send/reciver over groups
+Application level multicast or gossip
+** Gossip
+*** Epidemic protocols
+No central coordinator - just send to nodes and they forward
+The more node, the larger the probability of transmission
+*** Anti-entropy
+Each node communicates with a random node
+- All nodes does this
+We can do, pull, push or both approaches
++ Ask for message
++ Push messages to other
++ Do both
+Spreading updates takes $\log N$ time
+*** Gossiping
+If P is updates, it tells a random node Q
+If Q already new the update, P loses some interest(Q is not as
+interested in P)
+Not Guaranteed that all notes get infected by update
+- I guess we loss interest if there are already enough nodes that
+  tells us the gossip
+- The downside is however we might miss some updates, since we lost
+  interest
+
+* Employing Queue to Decouple Systems
+** 2PC
+Coordinator queries the participants to commit
+They vote either yes/no
+Coordinator replies with outcome
+Participants ack
+We end by completing commit
+
+** CAP Theorem
+*** Consistency
+Client percieves a set of operations as have occured all at
+once(atomicity). That is, it should not matter which node the client
+whatches. Atomicity ensure instant replication
+
+2PC guarantees consistency(atomicity)n
+*** Availability
+Every request ends with an intended response.
+If I ask a service to do something, i must get the inteded
+response. Could be the intended book in the basked immediately
+
+
+If 2PC is used, we will not guarantee the operations will
+terminate/give correct response. 2PC has no way of detecting slow
+participant of down node. We choose consistency over availability.
+
+The client gets a response even if a node is down
+*** Partition tolerance
+Operations will terminate when the operations are partioned(to
+different components/computers/clusters).
+This means that if a connection is broken between two nodes (might be
+temporarely), and the system must be able to continue running.
+
+*** Theorem
+A scaleable service cannot provide all three simultaneously.
+
+* BASE
+Since ACID, ensured using 2PC, makes us choose C over A we need a way
+to choose A over C when it is desired.
+** Basically available
+Only affected components are unavailable not the entire system.
+** Soft-state
+A components state can be out of date, and events be lost without
+affecting availability.
+In other words, it is okay for us to be out of sync when loosing a
+message.
+** Eventually consistent
+When we reach a point of no further updates and failures we will
+eventually converge to consistent state across nodes.
