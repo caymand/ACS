@@ -1,0 +1,62 @@
+* Two-way external merge sort
+Total cost 2*N*log(N) passes. 2 comes from read and write
+- Every case merges two runs
+Cost depends on number of passes
+- Can we decrease passes - i.e merge more runs (shorter tree heights)
+** Phase 1
+Use only 1 page in memory buffer (1 page memory buffer)
+
+* Terms
++ Buffer pages
++ Input buffer
++ Output buffer
+
+* Multi-way external merge sort
+B -page memory buffer
+- Length of each run is B phases
+- num_runs = N/B
+** Phase 1
+Assume b=4
+- Allocate B-1 buffer pages for input
+- 1 buffer for output
+- We merge B-1 runs
+- The number of passes will still be log, but base B-1
+4-Page runs merged into 3 inputs
+** Phase 2
+Load 1 from each run and move pointer
+Now in main memory we have 3 runs in 3 input buffers we can merge into output buffer
+- when 1 load from a page is empty load the next.
+- Merge into output buffer
+- Output buffer to database
+
+*** Optimization
+Reading one page at a time can be slow, since we need to reposition
+the head of the HDD.
+- Make each buffer (input and output buffer) a block of phages instead
+- Better read performance
+The input buffers therefore has a number of pages
+This optimizations however means we cannot merge as many pages
+- The number of input buffers is less
+- Input is 4 buffer pages
+- Now we have effectively B-1/4 input buffers
+*** Optimization: Double buffering
+Goal is to reduce IO wait time
+Observcation - it takes time to write output buffer to disk (flushing)
+before we can continue merging
+- CPU will be idle
+Also when an input buffer is empty we have to wait for a new page to
+be loaded, we wait in idle mode, before continuing merge (we always
+take the smallest of each input)
+- We make a shadow buffer - double buffering
+- If a buffer is full, we use the shadow buffer for merging
+  - This holds for buffer output buffer and input buffers
+  - Output writes main buffer and shadow buffer gets written to
+  - Input buffer reads from shadow buffer while main buffer is loaded
+We reduce the actual number of input buffers and use more memory
+- Originally we could merge B-1 buffers
+- Now we have B/2b input buffers. Each buffer is smaller
+
+*** General optimizations
+Utilize memory better
+Read sequences of data (faster)
+Keep disk busy

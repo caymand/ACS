@@ -1,0 +1,263 @@
+Fault
+	Underlying "imperfection" that can potentially fail"
+	Types of faults
+		Software fault
+		Hardware fault - gate that produces zero always
+		Design fault - calculating too little memory
+		Implementation - Installing less memory
+		Operations - fault due to human error (can later cause error)
+		Environment - the environment causes something to fail(creates an imperfection that might cause failure later)
+	Latent fault
+	Active faults
+		Wrongs results in data values and control signals
+		Wrong results are errors
+		Causes assertion in specification to fail
+Error - producing wrong result as a result of a fault
+		
+Failure
+	The actual incident - this may be due to a fault\
+	No producing intended result at an interface - formal definition
+Fault tolerance
+	In systems made of of larger substystems, then a subsystem failing is a fault
+	This fault may lead to an error - this is what causes the larger subsystem to fail
+		Analogy is a flat tire - this causes the larger subsystem(car) to fail
+	Fault tolerance is noticing the active fault of a subcomponent and masking the error
+	Must always report that an error was masked
+		Otherwise it is impossible to see errors are accumulated which might lead to module failure
+	
+Error Containment
+	From the outside, the only effect of an error is at the interfaces of subsystems (subsystem are self-contained)
+	Error boundary is smallest subsystem
+	- Mask the error
+	- Detect and report error at interface (fail fast)
+	- Immediately stop dead (fail-stop)
+	- Do nothing (a crash)
+	
+Transient fault (single-event upset, from external)
+	Masking can be done by retry of operation
+Persistent fault (hard errors)
+	Continues to produce errors
+Intermittent fault
+	Only occasionally
+Latency
+	Time from fault causes error to dection (or causing module to fail)
+	When a bit stuck at zero, but we expect it to be zero, the fault will be latent(until we expect 1)
+
+
+
+Fault-Tolerance Design process
+----
+Fault avoidance
+
+Be Explicit
+	State the assumptions (what we expect to fail)
+Design for iteration
+Safety margin principle
+	- Failure is often due to maksed faults accumullating
+	- We should log detected faults and handle them when enough have accumulated
+Keep digging - 5 whys'
+Dopt sweeping simplifications - KISS
+
+
+
+
+Measures of Reliability and Failure Tolerance
+----
+Time to failure (TTF)
+	- Interesting for higher subsystem that do not mask failure and persistent failure
+	Two ways to calculate (ensemble-average, and time-average)
+		- Ensemble average: If a failing component is completely discarded, we run each FFTi in hopefully identical environments until failure
+			- This can also be used for repaired components, but can be too optimistic if repairing causes other parts of the system to fail. This might accumulate.
+		- Time average: Typically when the component is repaired, we measure the TTFi for the ith iteration
+Time to repair (TTR)
+Availability measure
+Downtime - 1-availability
+MTTF, MTTR, MTBF
+	- How is the system doing
+	- Predict how it will due in the future (risky)
+Bathtup-curve 
+	- many failures just after production, stable, wear and tear accumulates and many fail
+	- Infant mortality
+	- Burn out
+Yield
+	- Fraction surviving burn-in
+"MTTF"
+	- inverse of failure rate at lowest point of bathtup curve
+Preventive maintenance
+Memoryless failure process
+Accellerated aging
+fail-soft
+Conditional failure rate h(t)
+	- Probability that a module fails between time t and t+dt, given the probability works at time t
+Reliability funciton
+	- memoryless - conditional failure rate is independent of how long the component has been operating. Memoryless failure processes have that the conditional failure is the inverse of MTTF
+4.5-sigma reliability
+	- Tolerance i 4.5 standard deviations from mean value
+the robustness principle: “be strict on outputs”
+Failure tolerance
+	- Failures in components a system can tolerate before it self fails
+	- Monitor how much of the fault tolerance has been used
+	
+	
+	
+Tolerating Active Faults
+----
+Responding to active faules
+	- Do nothing - let the larger component discover and handle error
+	- Fail fast - report at interface the error
+	- Fail safe - transform value with error to an "acceptable state"
+	- Fail soft - continue with lower degree of functionality
+	- Mask the error - make incorrect value "right"
+Detectabke error
+	- error discovered before consequences propegate beyound some boundary
+Maskable error
+	 - Error is tollerated
+ 	- maskable boundary
+Untollerated error - undetectable, undetected, unmaskable and unmasked
+	- can lead to system failure
+
+
+
+Systematically Applying Redundancy
+----
+Forward error correction
+Hamming distance
+Raid4 redundancy
+	- 4 data, one parity of xor with the 4 other disks
+N-modular redundancy (NMR)
+	- Voter (device)
+	- Gather output of N modules running in parallel
+Fail-vote
+	- N replicates
+	- N-way comparator
+	- If majority of voters agree - voter accepts
+	- If any replicas disagree with majority - voter may raise or repeair for minority
+	- If no majority - voter notifies failure of supermoduel
+Tripple-modular-redundancy (TMR)
+Replication provides dramatic improvements to reliability
+TMR
+	- MMTF_replica/N until first failure
+	- MMTF_replica/(N-1) until second and so on
+	- MTTF_system is sum of all replicas when it is only required for one replica to be operating
+		Harmonic sum, so the bound is ln(N)
+When mission time is long compared to MTTF_replica, it is exponentially expensive to get benefit from replication. MTTF_system is exponential in number of replicas
+TMR provides short time reliability
+NOTE: TMR gives us very good reliability (odds of wrong results are very small), but MTTF will get worse.
+
+MTTR is interesting for a supermodule
+	- THe supermodule fails if the second or third replica disagree/fail before the first has been repaired
+- MTTF has been reduced by the usual factor of 3 because there are 3 replicas, but at the same time the availability of repair has increased the MTTF by a factor equal to the ratio of the MTTF of the remaining 2 engines to the MTTR.
+- Disks might not fail independently (production, environment)
+- Disk failures are not memoryless - when disk 1 fail and if disk 2 has been operating for 3 years, disk 2 no longer has MTTF=5 years
+-Repair is not memoryless - no stock today might mean no stock tomorrow
+- Repair is not done flawlessly
+Purging - replace replica when it is in minority
+Pair-and-compare - fail-fast approach using two replicas. It fails on disagreement
+NMR with fail-fast replicas - each replica uses the above fail-fast approach. Now TMR can handle two replicas failing
+Partition - run at lower capacity if something fails
+N+1 redundancy - If one module fails, then due to a redundant module full capacity is preserved
+
+
+
+----
+Wrapping up reliability
+- N-modular redundancy
+- Fail-fast modules - sweeping simplification(fault tolerance contained)
+- Pair-and-compare - fail-fast modules from off-the-sehfl components
+- end-to-end argument
+  	     A component must not do enything about error or do anything that might compromise other goals (speed, latency, etc.)
+- Error containment
+  - Masking can be done locally at the container
+  - error can be handled by reporting at interface (allowing larger module to deal with error)
+- Watch out for reliability analysis, since it can give false confidence
+
+
+
+Slides
+----
+Asynchronous replication
+ - Writes return/finnish before we have finished changing all replica copies
+ - Read look a subset of copies - ensure the same value is stored
+   	We can have that some copies can be out of sync due to async writes
+ - Primary site >< Peer to peer replication
+   - Difference in number of updatable copies
+   - Bit-torrent have replicas of its torrents on multiple machines
+Primary site replication
+ - One copy is the "master copy". Replicas subscripe to update of master copy
+ - Issue is how changes to master propagate
+   - Capture changes
+   - Apply at replicas
+Peer-to-Peer replication
+ - More master copies
+ - Two master copies can have conflicting changes - must be resolved
+ - Good for associative and commutative operations
+Eventual consistency - (vector timestamps i think)
+ - If there are no new updates occur after a fixed determine time of inconsistency, we go back to the last same updated value
+ - Prefix property
+   Lets say Host 1 sees write wi,2(write i accepted by host 2)
+   Now all writes j < i accepted by host 2 are owned by host 1
+   We now who owns the writes prior to ith write
+
+Events and histories
+- A process has three types of events: local, send, receive
+- History hp is the sequence of events executed by process p
+- Events in a local history are totally ordered (process does them sequentially)
+- Everey messege send(m) by process 1 preceedes receive(m) by process 2
+
+Happens-before
+ - Definition of happens-before(->)
+   - Same process: a ->b whenever time(a) < time(b)
+   - when p1 send(m) to p2: send(m) -> receive(m=
+   - Transitivity: if a -> b and b -> c then we have that a->c
+ - lamport algorithm - gives partial ordering (this is the ordering <=)
+   - All process have a counter/clock starting at 0
+   - Counter is incremented and assigned to each event as a timestamp
+   - A send(m) carries its timestamp
+   - The receive(m) updates the counter
+   - max (receiver-counter, message-timestamp) + 1 is the ordering
+     and shows timestamps.
+     If p1 has time 2, and sends mesage to p2 with counter 0, then the event is at timestemp 3 at p2
+   - timestamp(e) < timestamp(f) then e preceedes f
+
+Vector logical clocks
+       - Lamport logical time
+       	 + e preceedes f => timestamp(e) < timestamp(f) (the ordering)
+	 + timestamp(e) < timestamp(f) does not imply that e -> f (e preceedes f)
+	- Vector logical time
+	  + Each host has a vector of counters (logical clocks)
+	  + i'th element is the clock value for host i, initially 0
+	  + Each host 1 increments the ith element of the vector on an event, then the vector is assigned that new event.
+	  + A send(msg) now carries the vector timestamp
+	  + For receive(msg) we update the vector as
+	    v_receiver[j] = {max(v_receiver[j], v_msg[j]) if j is not self, v_receiver[j] + 1 else}
+
+Comparing vector time
+	  - a = b if they agree at every element in their vectors
+	  - a < b if a[i] <= b[i] for all i except !(a=b)
+	  - a> b if a[i] >= b[i] for all i except !(a=b)
+	  - a||b if a[i] < b[i], a[j] > b[j] for some i,j. This is a conflict
+
+Causual consistency
+	- From the slides, we think b follows a, but we do not now whether c follows b or a
+	- 
+   
+Synchronoas replication
+	    - Hide replication behind read/write
+	    - Program against memory
+	      + This makes sure reads and writes are atomic
+	      	- All or nothing - either all correct replicas or none
+		- before or after - equivalent to a total order
+	- Read any, write all
+	  + Writes synchronously sent everywhere
+	  + But read can be answered by any replica
+	- Quorums
+	  + Read Qr / write Qe
+	  + Qr + Qe > Nreplicas
+	- Reads or writes are only successful if same response is given by respective quorums. Like in the book with supermodule or fail-safe off-the-shelf product
+	  + Read any, write all is Qw=N_replicas, Qr=1
+	  + This is since we have to write to all quorums, and all must be successful, but any single read is considered correct.
+	
+	
+	
+	
+	

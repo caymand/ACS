@@ -1,0 +1,133 @@
+* Sorting with index
+** B+ trees
++ Each node occupies a page
++ Entries in non-leave nodes -> index entries (key value, page_id)
++ Leaf nodes -> Data entries
+  - Direct index - contain data
+  - Indirect index - pointer to data
+  - Stores all possible keys with pointer to the data of the key.
+
+** Sorting with B+ tree
+Table to be sorted uses B+ tree indexing for sorting the columns
+Idea:
++ We can retrieve record in order by traversing leaves (these are
+  always sorted)
+
+Cost:
+- Traverse root to left-most leaf node (then for indirect addressing
+  follow pointer of leaf)
+- Always better than external sorting if we store data in this way
+  (assuming data in leafs are stored in sequential blocks)
+- However, the data record are often not stored this way. We have a
+  pointer to the data (the data entry is the pointer, and these might
+  be sorted), and the actual data might not be sorted, so we
+  have costly memory(scattered) data access.
+  - We have one IO per data record
+  - Some data entries might share data record, but since we have
+    scattered data access, each lookup of data retrieval might load
+    the data record again.
+  - Hence worst case, the number of IO operations is number of data items
+  - Not always best way to sort data, compared to external sorting.
+
+* Relational operators
+** Select
+*** No index on selection attributes
+Scan through all data items to see if they fulfill selection
+- Filter on the fly
+- Cost of N data-items is N, since we loop over everything
+*** Index on selection attributes (all)
+Assume index on age, salary with age as primary key
+Cost
+- Traversing index to find fist data item that matches age predicate
+- Then traverse the subset of data entries
+  Alternatively, if indirect addressing, follow pointer
+  - For non-clustered case(scattered IO) - num IO may as large as the sequential
+    scan of data entries. In this case sequential might be faster
+  - For clustered (non-scattered data entry pointer to data-record) -
+    this can be very fast.
+We can estimate how many IO accesses we need so that we know whether
+to use sequential access or using the index
+    
+*** Matching index om some attributes
+Assume index only on Age
+- Use index to get superset of relavent data-set
+- Then apply remaining predicate on the fly on this superset
+
+Use the index seperately on each attribute. Then do intersection
+- On the reurned tuples we apply remaining predicated (on the fly)
+
+We may also ignore index and only use sequential scan
+
+Which is better?
+Depends on the data.
+For a lot of data-sequential may be faster since we do everything on
+the fly
+
+** Projection
+Main issue is duplicate elimination (distinct keyword)
+
+*** No index
++ Sort recrods - duplicates are adjacent
++ Hashing - duplicates are hashed to the same bucket
+External sorting:
+For phase 1, project out unwanted columns
+Phase 2 - eliminate duplicates during merge into output buffer
+- Easy be seeing if next equals previous
+
+Hashing
+Assume B-memory buffer
+- Input buffer + B-1 Hash table
+- Only hwen data is smaller than number of hash buckets
+For large data we do 2 phases
+- Phase 1
+  - use h to partition tuples to B-1 partitions appending duplicates
+- Phase 2
+  - Use new hash function and hash each partition into as many buckets
+    as possible 
+What if partition does not find in memory - cannot do phase 2
+- Repeat phase 1 for a partition
+
+External hashing vs sorting
+- Hashing
+Each pass uses 2N - read to memory and write (write is either to disk
+or memory)
+So phase 1 and 2 uses 2N + 2N IO
+- We do not take the last write into account so 3N
+Suppose it can be done in two passes
+Sorting
+Each pass uses 2N IO.
+We do it in two passes so 4N and skipping last write to disk 3N IO ops
+- So they use the same number of IO
+
+Sorting
+- We merge the B-1 partitions
+- So we split and merge
+- Phase 1 has sequential write to B-1 partitions
+- Phase 2 we do random read(one page from each partition) and these
+  are random based on lowest number
+Hashing
+- Phase 1 does partitioning into B-1 sets as well (first hash function)
+  - logical devision
+- Phase 2 takes one partition and hashes to as many as possible
+  - We append to final output (sequential writes)
+- So we do random writes (phase1 ) followed by sequential reads (phase
+  2 when reading from each partition and do sequential hashing on each
+  element of the partition)
+So there is symmetry in the operations by sorting and hashing
+
+We have a condition that sorting can be done in 2 passes.
+Num runs is N/B. We must have N/B for sorting for above analysis to
+run in 1 pass.
+- Memory should be greater than sqrt(N) and smaller than N
+
+For hashing - each partition needs to be smaller than the size of the
+memory.
+- We have B-1 partitions - phase 1
+- Size of each partition is N/(B-1) <= B, so B > sqrt(N)
+- Then we can do external hashing in 2 passes
+
+So which is better?
+- Sorting is good if input is almost sorted.
+- Sorting also good if output should be sorted
+- Sorting not sensitive to data skew (hash to the same)
+- Hash is parallelizable

@@ -1,0 +1,21 @@
+Memory
+
+Example
+================
+pi = (start_addr, end_addr, dirty, data)
+tlb = [p1,p2,...pm]
+disk = [p1, p2,...,pm,...pn]
+
+function lookup(tlb, addr) -> check if address is in a page in tlb and return page or null
+
+function read(addr) ->
+	p = lookup(tlb, addr)
+	if p == null {
+		p = read_disk
+		get LRE page for tlb, and write to disk if dirty, and overwrite the
+	}
+
+function read_disk(addr) ->
+	gets page from disk
+
+================
